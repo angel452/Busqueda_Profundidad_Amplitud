@@ -44,7 +44,8 @@ void drawLine(float x1, float y1, float x2, float y2) {
     glEnd();
 }
 
-float size_Square = 0.01f;
+float size_Square = 0.008f;
+float scalarWindow = 60;
 // ############################## ESTRUCTURAS #######################################
 struct Point{
     float puntos[2];
@@ -61,9 +62,10 @@ struct Point{
     }
 
     void printPointsOfNode(){
-        for(int i = 0; i < 2; i++){
-            cout << puntos[i] << " ";
-        }
+        cout << "(" << puntos[0] << "," << puntos[1] << ")";
+        //for(int i = 0; i < 2; i++){
+        //    cout << puntos[i] << " ";
+        //}
     }
 
     bool isBothOdd(){
@@ -104,6 +106,31 @@ struct Node{
             }
             cout << endl;
         }
+    }
+
+    void printAllNodes(){
+        // Mostramos los nodos disponibles uno al lado del otro dependiendo de la columna que pertenece
+        cout << "Mostramos los datos disponibles... ( "<< data.size() << " Puntos en total )"  << endl;
+        float nColumna = data[0][0][0];
+
+        cout << endl << "----------- COLUMNA " << nColumna << " -----------" << endl;
+        for(int i = 0; i < data.size();i++){
+            if( nColumna != data[i][0][0] ){
+                nColumna = data[i][0][0];
+                cout << endl << endl;
+                cout << "----------- COLUMNA " << nColumna << " -----------" << endl;
+            }
+            data[i][0].printPointsOfNode();
+            cout << "  ";
+        }
+        cout << endl;
+        /*
+        for(int i = 0; i < data.size();i++){
+
+            data[i][0].printPointsOfNode();
+            cout << endl;
+        }
+         */
     }
 
     int searchNode(Point nodo){
@@ -285,7 +312,7 @@ struct Node{
 
             // --> FLAG
             if( ptr_posInicio == ptr_posFin ){
-                cout << endl << "----------------------------------------" << endl;
+                cout  << "----------------------------------------" << endl << endl;
                 cout << "Llegamos al nodo final" << endl;
 
                 // --> 7. Imprimimos el camino
@@ -293,6 +320,7 @@ struct Node{
                 for(int i = 0; i < dataBusquedaProfundidad[0].size(); i++){
                     cout << "(" << dataBusquedaProfundidad[0][i][0] << "," << dataBusquedaProfundidad[0][i][1] << ") ";
                 }
+                cout << endl;
                 break;
             }
 
@@ -331,7 +359,59 @@ struct Node{
     }
 
     float convertEscalarWindow(float num){
-        return (num / 30)+0.1; // 10
+        return (num / scalarWindow)+0.1;
+    }
+
+    int printAllNodes_OpenGL(){
+        if (!glfwInit()) {
+            return -1;
+        }
+
+        GLFWwindow* window = glfwCreateWindow(800, 800, "Total nodos creados (100x100)", NULL, NULL);
+        if (!window) {
+            glfwTerminate();
+            return -1;
+        }
+
+        glfwMakeContextCurrent(window);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // Recorremos todos los nodos en la primera posicion de cada vector
+            for(int i = 0; i < data.size(); i++){
+                // Para graficar los cuadrados
+                float posX_Square, posY_Square;
+                posX_Square = convertEscalarWindow(data[i][0][0]);
+                posY_Square = convertEscalarWindow(data[i][0][1]);
+
+
+                // Dibujar varios cuadrados
+                glColor3f(0.0f, 1.0f, 0.0f); // Color verde
+                drawSquare(posX_Square, posY_Square, size_Square);
+
+                // Dibujar lineas
+                float posX1_Line, posY1_Line, posX2_Line, posY2_Line;
+                posX1_Line = convertEscalarWindow(data[i][0][0]) + (size_Square / 2);
+                posY1_Line = convertEscalarWindow(data[i][0][1]) + (size_Square / 2);
+                for(int j = 1; j < data[i].size(); j++){
+                    posX2_Line = convertEscalarWindow(data[i][j][0]) + (size_Square / 2);
+                    posY2_Line = convertEscalarWindow(data[i][j][1]) + (size_Square / 2);
+
+                    // Cambiamos al color celeste
+                    drawLine(posX1_Line, posY1_Line, posX2_Line, posY2_Line);
+                }
+            }
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+
+        glfwTerminate();
+        return 0;
     }
 
     int printPath_OpenGL(){
@@ -415,12 +495,12 @@ struct Node{
         return 0;
     }
 
-    int printAllNodes_OpenGL(){
+    int printNode_OpenGL(Point node){
         if (!glfwInit()) {
             return -1;
         }
 
-        GLFWwindow* window = glfwCreateWindow(800, 800, "Total nodos creados (100x100)", NULL, NULL);
+        GLFWwindow* window = glfwCreateWindow(800, 800, "Camino", NULL, NULL);
         if (!window) {
             glfwTerminate();
             return -1;
@@ -434,7 +514,7 @@ struct Node{
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT);
 
-            // Recorremos todos los nodos en la primera posicion de cada vector
+            // ########### GRAFICAMOS LOS NODOS VERDES ############
             for(int i = 0; i < data.size(); i++){
                 // Para graficar los cuadrados
                 float posX_Square, posY_Square;
@@ -458,6 +538,15 @@ struct Node{
                 }
             }
 
+            // ########### GRAFICAMOS LOS NODOS INICIO O FINAL ############
+            float posX_Square, posY_Square;
+            posX_Square = convertEscalarWindow(node[0]);
+            posY_Square = convertEscalarWindow(node[1]);
+
+            // Dibujar cuadrados de color rojo
+            glColor3f(1.0f, 0.0f, 0.0f); // Color rojo
+            drawSquare(posX_Square, posY_Square, size_Square);
+
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
@@ -470,7 +559,7 @@ struct Node{
 // ############################## MAIN ##############################
 int main(){
     // OJO: Solo numeros impares para nNodosLado: {5,7,9,...}
-    int nNodosLado = 5; // 100 x 100
+    int nNodosLado = 51; // 100 x 100
 
     /*
      * Ejemplos
@@ -485,6 +574,10 @@ int main(){
      * - 21 x 21 (con 50% de eliminados)
      *    - ini: 5,10
      *    - fin: (20,9) o (6,9)
+     *
+     * - 51 x 51 (con 30% de eliminados)
+     *    - ini: 0,0
+     *    - fin: 47,50
      */
 
     // DIBUJANDO EL ARBOL
@@ -512,7 +605,8 @@ int main(){
 
     if( respuestaMenu == 1 ){
         cout << "---------------------------------------------------------------" << endl;
-        arbol.printEstructure();
+        //arbol.printEstructure();
+        arbol.printAllNodes();
         arbol.printAllNodes_OpenGL();
 
     }
@@ -520,30 +614,38 @@ int main(){
         return 0;
     }
 
-    cout << "----------------------------------------------------------" << endl;
+    cout << endl << "###############################################################" << endl;
     cout << "Ingrese la cantidad de nodos a eliminar (%): " << endl;
     int porcentaje;
     cin >> porcentaje;
 
     arbol.deleteNodos(porcentaje, nNodosLado);
+    cout << "###############################################################" << endl << endl;
 
-    arbol.printEstructure();
+    //arbol.printEstructure();
+    arbol.printAllNodes();
     arbol.printAllNodes_OpenGL();
 
-    cout << "----------------------------------------------------------" << endl;
+    cout << endl << "----------------------------------------------------------" << endl;
     float nodoInicio[2], nodoFinal[2];
     cout << " --> Comenzando busqueda " << endl;
-    cout << "Seleccione el nodo de inicio: (coordenada X)" << endl;
+    cout << "Seleccione el nodo de INICIO: (coordenada X)" << endl;
     cin >> nodoInicio[0];
-    cout << "Seleccione el nodo de inicio: (coordenada Y)" << endl;
+    cout << "Seleccione el nodo de INICIO: (coordenada Y)" << endl;
     cin >> nodoInicio[1];
-    cout << "Seleccione el nodo de final: (coordenada X)" << endl;
+
+    // --> Imprimimos nodo seleccionado
+    Point inicio(nodoInicio);
+    arbol.printNode_OpenGL(inicio);
+
+    cout << "Seleccione el nodo de FINAL: (coordenada X)" << endl;
     cin >> nodoFinal[0];
-    cout << "Seleccione el nodo de final: (coordenada Y)" << endl;
+    cout << "Seleccione el nodo de FINAL: (coordenada Y)" << endl;
     cin >> nodoFinal[1];
 
-    Point inicio(nodoInicio);
+    // --> Imprimimos nodo seleccionado
     Point final(nodoFinal);
+    arbol.printNode_OpenGL(final);
 
     arbol.busquedaProfundidad(inicio, final);
     arbol.printPath_OpenGL();
