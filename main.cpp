@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include "GLFW/glfw3.h"
+#include <chrono>
+#include <thread>
 using namespace std;
 
 // ############### VARIABLES GLOBALES - PROGRAMA ####################################
@@ -41,6 +43,8 @@ void drawLine(float x1, float y1, float x2, float y2) {
     glVertex2f(x2, y2);
     glEnd();
 }
+
+float size_Square = 0.01f;
 // ############################## ESTRUCTURAS #######################################
 struct Point{
     float puntos[2];
@@ -260,32 +264,66 @@ struct Node{
     }
 
     void busquedaProfundidad( Point inicio, Point fin ){
-        // --> Ej:
-        // inicio = (0,3)
-        // fin = (2,1)
-        bool flag = true;
-        int ptr_posInicio = searchNode(inicio);
-        int ptr_posFin = searchNode(fin);
+        int ptr_posInicio = searchNode(inicio); // Buscamos la posicion del nodo inicial
+        int ptr_posFin = searchNode(fin); // Buscamos la posicion del nodo final
 
+        // Matriz de n x 1 (n = cantidad de nodos) donde todos los datos son false
+        bool visitados[data.size()];
+        for(int i = 0; i < data.size(); i++)
+            visitados[i] = false;
+
+        // --> Primera insercion
         vector<Point> test;
         test.push_back(data[ptr_posInicio][0]);
+        dataBusquedaProfundidad.push_back(test);
 
-        dataBusquedaProfundidad.push_back(test); // Colocamos el nodo inicial en la lista de busqueda
+        //cout << endl << "BUSQUEDA PROFUNDIDAD " << endl << endl;
 
-        while( ptr_posInicio != ptr_posFin ){
-            // --> Añadimos todos sus hijos del primero nodo antes de eliminar
-            for(int i = 1; i < data[ptr_posInicio].size(); i++){
-                vector<Point> aux;
-                aux.push_back(data[ptr_posInicio][i]);
-                dataBusquedaProfundidad.push_back(aux);
+        while(ptr_posInicio != ptr_posFin){
+            // --> 1. Buscamos la posicion del puntero inicio
+            ptr_posInicio = searchNode(inicio);
 
-                // Colocamos a dichos hijos su padre
+            // --> FLAG
+            if( ptr_posInicio == ptr_posFin ){
+                cout << endl << "----------------------------------------" << endl;
+                cout << "Llegamos al nodo final" << endl;
 
+                // --> 7. Imprimimos el camino
+                cout << "Camino: ";
+                for(int i = 0; i < dataBusquedaProfundidad[0].size(); i++){
+                    cout << "(" << dataBusquedaProfundidad[0][i][0] << "," << dataBusquedaProfundidad[0][i][1] << ") ";
+                }
+                break;
             }
 
-            // --> Eliminamos el primer elemento
+            // --> 2. Marcamos el nodo como visitado
+            visitados[ptr_posInicio] = true;
+
+            for(int i = 1; i < data[ptr_posInicio].size(); i++){
+                // --> 3. Verificamos si su hijo ya fue visitado
+                int ptr_posHijo = searchNode(data[ptr_posInicio][i]);
+
+                if( visitados[ptr_posHijo] == false ){ // hijo no visitado
+                    // --> 4.1) Añado en un vector al nodo hijo
+                    vector<Point> vec_Hijo;
+                    vec_Hijo.push_back(data[ptr_posHijo][0]);
+
+                    // --> 4.2) Despues de dicho nodo, añado todos los nodos de la primera posicion
+                    for(int j = 0; j < dataBusquedaProfundidad[0].size(); j++){
+                        vec_Hijo.push_back(dataBusquedaProfundidad[0][j]);
+                    }
+
+                    // --> 4.3) Añado el vector hijo en dataBusquedaProfundidad despues del primero dato
+                    dataBusquedaProfundidad.insert(dataBusquedaProfundidad.begin() + 1, vec_Hijo);
+                }
+            }
+            // --> 5. Eliminamos el primer dato de dataBusquedaProfundidad
             dataBusquedaProfundidad.erase(dataBusquedaProfundidad.begin());
+
+            // --> 6. Actualizamos el inicio al primero nodo
+            inicio = dataBusquedaProfundidad[0][0];
         }
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     void busquedaAmplitud(Point inicio, Point final){
@@ -294,6 +332,87 @@ struct Node{
 
     float convertEscalarWindow(float num){
         return (num / 30)+0.1; // 10
+    }
+
+    int printPath_OpenGL(){
+        if (!glfwInit()) {
+            return -1;
+        }
+
+        GLFWwindow* window = glfwCreateWindow(800, 800, "Camino", NULL, NULL);
+        if (!window) {
+            glfwTerminate();
+            return -1;
+        }
+
+        glfwMakeContextCurrent(window);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // ########### GRAFICAMOS LOS NODOS VERDES ############
+            for(int i = 0; i < data.size(); i++){
+                // Para graficar los cuadrados
+                float posX_Square, posY_Square;
+                posX_Square = convertEscalarWindow(data[i][0][0]);
+                posY_Square = convertEscalarWindow(data[i][0][1]);
+
+
+                // Dibujar varios cuadrados
+                glColor3f(0.0f, 1.0f, 0.0f); // Color verde
+                drawSquare(posX_Square, posY_Square, size_Square);
+
+                // Dibujar lineas
+                float posX1_Line, posY1_Line, posX2_Line, posY2_Line;
+                posX1_Line = convertEscalarWindow(data[i][0][0]) + (size_Square / 2);
+                posY1_Line = convertEscalarWindow(data[i][0][1]) + (size_Square / 2);
+                for(int j = 1; j < data[i].size(); j++){
+                    posX2_Line = convertEscalarWindow(data[i][j][0]) + (size_Square / 2);
+                    posY2_Line = convertEscalarWindow(data[i][j][1]) + (size_Square / 2);
+
+                    drawLine(posX1_Line, posY1_Line, posX2_Line, posY2_Line);
+                }
+            }
+
+            // ########### GRAFICAMOS EL CAMINO ROJO ############
+            // Recorremos todos los nodos de la primera posicion de dataBusquedaProfundidad
+            for(int i = 0; i < dataBusquedaProfundidad[0].size(); i++){ // Para graficar los cuadrados
+                float posX_Square, posY_Square;
+                posX_Square = convertEscalarWindow(dataBusquedaProfundidad[0][i][0]);
+                posY_Square = convertEscalarWindow(dataBusquedaProfundidad[0][i][1]);
+
+                // Dibujar varios cuadrados de color rojo
+                glColor3f(1.0f, 0.0f, 0.0f); // Color rojo
+                drawSquare(posX_Square, posY_Square, size_Square);
+            }
+
+            // Para graficar las lineas
+            float posX1_Line, posY1_Line, posX2_Line, posY2_Line;
+            // --> inicializamos el primer punto de la linea
+            posX1_Line = convertEscalarWindow(dataBusquedaProfundidad[0][0][0]) + (size_Square/2);
+            posY1_Line = convertEscalarWindow(dataBusquedaProfundidad[0][0][1]) + (size_Square/2);
+            for (int i = 1; i < dataBusquedaProfundidad[0].size(); i++){
+                posX2_Line = convertEscalarWindow(dataBusquedaProfundidad[0][i][0]) + (size_Square/2);
+                posY2_Line = convertEscalarWindow(dataBusquedaProfundidad[0][i][1]) + (size_Square/2);
+
+                // Dibujar varias lineas de color rojo
+                glColor3f(1.0f, 0.0f, 0.0f); // Color rojo
+                drawLine(posX1_Line, posY1_Line, posX2_Line, posY2_Line);
+
+                // --> Actualizamos el primer punto de la linea
+                posX1_Line = posX2_Line;
+                posY1_Line = posY2_Line;
+            }
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+
+        glfwTerminate();
+        return 0;
     }
 
     int printAllNodes_OpenGL(){
@@ -318,10 +437,10 @@ struct Node{
             // Recorremos todos los nodos en la primera posicion de cada vector
             for(int i = 0; i < data.size(); i++){
                 // Para graficar los cuadrados
-                float posX_Square, posY_Square, size_Square;
+                float posX_Square, posY_Square;
                 posX_Square = convertEscalarWindow(data[i][0][0]);
                 posY_Square = convertEscalarWindow(data[i][0][1]);
-                size_Square = 0.01f;
+
 
                 // Dibujar varios cuadrados
                 glColor3f(0.0f, 1.0f, 0.0f); // Color verde
@@ -329,14 +448,14 @@ struct Node{
 
                 // Dibujar lineas
                 float posX1_Line, posY1_Line, posX2_Line, posY2_Line;
-                posX1_Line = convertEscalarWindow(data[i][0][0]) + (size_Square / 2); //
+                posX1_Line = convertEscalarWindow(data[i][0][0]) + (size_Square / 2);
                 posY1_Line = convertEscalarWindow(data[i][0][1]) + (size_Square / 2);
                 for(int j = 1; j < data[i].size(); j++){
                     posX2_Line = convertEscalarWindow(data[i][j][0]) + (size_Square / 2);
                     posY2_Line = convertEscalarWindow(data[i][j][1]) + (size_Square / 2);
 
                     drawLine(posX1_Line, posY1_Line, posX2_Line, posY2_Line);
-                };
+                }
             }
 
             glfwSwapBuffers(window);
@@ -350,7 +469,23 @@ struct Node{
 
 // ############################## MAIN ##############################
 int main(){
+    // OJO: Solo numeros impares para nNodosLado: {5,7,9,...}
     int nNodosLado = 5; // 100 x 100
+
+    /*
+     * Ejemplos
+     * - 5 x 5 (con 50% de eliminados)
+     *    - ini: 0,3
+     *    - fin: 2,1
+     *
+     * - 5 x 5 (con 10% de eliminados)
+     *    - ini: 0,0
+     *    - fin: 4,4
+     *
+     * - 21 x 21 (con 50% de eliminados)
+     *    - ini: 5,10
+     *    - fin: (20,9) o (6,9)
+     */
 
     // DIBUJANDO EL ARBOL
     Node arbol;
@@ -410,7 +545,9 @@ int main(){
     Point inicio(nodoInicio);
     Point final(nodoFinal);
 
-    //arbol.busquedaProfundidad(inicio, final);
+    arbol.busquedaProfundidad(inicio, final);
+    arbol.printPath_OpenGL();
+    
     //arbol.busquedaAmplitud(inicio, final);
 
     return 0;
