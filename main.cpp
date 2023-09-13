@@ -7,6 +7,8 @@
 #include <queue>
 using namespace std;
 
+bool switchinWindow = 1;
+
 // ############### VARIABLES GLOBALES - PROGRAMA ####################################
 // Expancion en todos los lados
 float exp_x[] = { -1,-1, 1, 1, -1, 0, 0, 1 };
@@ -84,6 +86,11 @@ struct Point{
 
     float &operator[]( int posicion ){
         return puntos[posicion];
+    }
+
+    void operator = ( float nuevosPuntos[2] ){
+        puntos[0] = nuevosPuntos[0];
+        puntos[1] = nuevosPuntos[1];
     }
 };
 
@@ -425,7 +432,7 @@ struct Node{
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(window) && switchinWindow) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             // Recorremos todos los nodos en la primera posicion de cada vector
@@ -477,7 +484,7 @@ struct Node{
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(window) && switchinWindow) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             // ########### GRAFICAMOS LOS NODOS VERDES ############
@@ -563,7 +570,7 @@ struct Node{
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(window) && switchinWindow) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             // ########### GRAFICAMOS LOS NODOS VERDES ############
@@ -608,8 +615,46 @@ struct Node{
     }
 };
 
+Node arbol;
+Point inicio;
+Point final;
+
+bool prepare = 0;
+
+void interface()
+{
+    // print init graph
+    while(!prepare);
+    // arbol.printAllNodes();
+    arbol.printAllNodes_OpenGL();
+
+    // print delete nodes
+    while(!prepare);
+    arbol.printAllNodes_OpenGL();
+
+    // print init node
+    while(!prepare);
+    arbol.printNode_OpenGL(inicio);
+
+    // print end node
+    while(!prepare);
+    arbol.printNode_OpenGL(final);
+
+    // busqueda en profundidad
+    while(!prepare);
+    arbol.printPath_OpenGL("Busqueda en profundidad");
+    
+    // busqueda en amplitud
+    while(!prepare);
+    arbol.printPath_OpenGL("Busqueda en amplitud");
+
+}
+
 // ############################## MAIN ##############################
 int main(){
+
+    std::thread(interface).detach();
+
     // OJO: Solo numeros impares para nNodosLado: {5,7,9,...}
     int nNodosLado = 51; // 100 x 100
 
@@ -633,7 +678,6 @@ int main(){
      */
 
     // DIBUJANDO EL ARBOL
-    Node arbol;
 
     // --> Creando todos los puntos
     for(int i = 0; i < nNodosLado; i++){
@@ -648,23 +692,28 @@ int main(){
 
     arbol.createEstructure();
 
-    int respuestaMenu;
+    prepare = true;
+
+    int respuestaMenu = 1;
     cout << "------------------- BUSQUEDA POR PROFUNDIDAD -----------------" << endl;
-    cout << "Ver los nodos del arbol: ........................... 1" << endl;
-    cout << "Iniciar con la busqueda: ........................... 2" << endl;
+    // cout << "Ver los nodos del arbol: ........................... 1" << endl;
+    cout << "Iniciar con la busqueda: ........................... 1" << endl;
     cout << "Salir: ............................................. 0" << endl;
-    cout << "Ingrese su opcion: "; cin >> respuestaMenu;
+    cout << "Ingrese su opcion: ";
+    cin >> respuestaMenu;
 
-    if( respuestaMenu == 1 ){
-        cout << "---------------------------------------------------------------" << endl;
-        //arbol.printEstructure();
-        arbol.printAllNodes();
-        arbol.printAllNodes_OpenGL();
-
-    }
-    else if( respuestaMenu == 0 ){
+    // if( respuestaMenu == 1 ){
+    //     cout << "---------------------------------------------------------------" << endl;
+    //     //arbol.printEstructure();
+    if( respuestaMenu == 0 ){
+        cout << "[!] Cerrando programa\n";
         return 0;
     }
+
+
+    // activar inicio
+    switchinWindow = false;
+    prepare = false;
 
     cout << endl << "###############################################################" << endl;
     cout << "Ingrese la cantidad de nodos a eliminar (%): " << endl;
@@ -672,12 +721,21 @@ int main(){
     cin >> porcentaje;
 
     arbol.deleteNodos(porcentaje, nNodosLado);
+    
+    cout << "prepared\n";
+    switchinWindow = true;
+    prepare = true;
     cout << "###############################################################" << endl << endl;
 
-    //arbol.printEstructure();
-    arbol.printAllNodes();
-    arbol.printAllNodes_OpenGL();
+    // //arbol.printEstructure();
     
+    cout << "Continuar (Enter)?\n";
+    cin.ignore();
+    cin.get();
+
+    // // activar eliminacion
+    switchinWindow = false;
+    prepare = false;
 
     cout << endl << "----------------------------------------------------------" << endl;
     float nodoInicio[2], nodoFinal[2];
@@ -687,27 +745,59 @@ int main(){
     cout << "Seleccione el nodo de INICIO: (coordenada Y)" << endl;
     cin >> nodoInicio[1];
 
-    // --> Imprimimos nodo seleccionado
-    Point inicio(nodoInicio);
-    arbol.printNode_OpenGL(inicio);
+    // // --> Imprimimos nodo seleccionado
+    inicio = nodoInicio;
+    // // activar punto inicial
+    switchinWindow = true;
+    prepare = true;
 
+    cout << "Continuar (Enter)?\n";
+    cin.ignore();
+    cin.get();
+
+
+    switchinWindow = false;
+    prepare = false;
     cout << "Seleccione el nodo de FINAL: (coordenada X)" << endl;
     cin >> nodoFinal[0];
     cout << "Seleccione el nodo de FINAL: (coordenada Y)" << endl;
     cin >> nodoFinal[1];
 
-    // --> Imprimimos nodo seleccionado
-    Point final(nodoFinal);
-    arbol.printNode_OpenGL(final);
-
+    // // --> Imprimimos nodo seleccionado
+    final = nodoFinal;
     
-    cout << "Busqueda en profundidad\n";
+    switchinWindow = true;
+    prepare = true;
+
+    //  activar busqueda
+    
+    cout << endl << "----------------------------------------------------------" << endl;
+    cout << "Continuar con la busqueda(Enter)?\n";
+    cin.ignore();
+    cin.get();
+
+    switchinWindow = false;
+    prepare = false;
+    cout << "Busqueda en Profundidad\n";
     arbol.busquedaProfundidad(inicio, final);
-    arbol.printPath_OpenGL("Busqueda en profundidad");
+
+    switchinWindow = true;
+    prepare = true;
+
+    cout << "Continuar (Enter)?\n";
+    cin.get();
+
+    switchinWindow = false;
+    prepare = false;
 
     cout << "Busqueda en amplitud\n";
     arbol.busquedaAmplitud(inicio, final);
-    arbol.printPath_OpenGL("Busqueda en amplitud");
-
+    
+    switchinWindow = true;
+    prepare = true;
+    
+    cout << "Finalizar (Enter)?\n";
+    cin.get();
+    
     return 0;
 }
