@@ -712,30 +712,32 @@ int main(){
 
 
     // activar inicio
-    switchinWindow = false;
-    prepare = false;
 
     cout << endl << "###############################################################" << endl;
     cout << "Ingrese la cantidad de nodos a eliminar (%): " << endl;
     int porcentaje;
     cin >> porcentaje;
 
+    switchinWindow = false;
+    prepare = false;
+
+    cout << "Continuar (Enter)?\n";
+    cin.ignore();
+    cin.get();
+
     arbol.deleteNodos(porcentaje, nNodosLado);
     
-    cout << "prepared\n";
     switchinWindow = true;
     prepare = true;
     cout << "###############################################################" << endl << endl;
 
     // //arbol.printEstructure();
     
-    cout << "Continuar (Enter)?\n";
-    cin.ignore();
-    cin.get();
+    // cout << "Continuar (Enter)?\n";
+    // cin.ignore();
+    // cin.get();
 
     // // activar eliminacion
-    switchinWindow = false;
-    prepare = false;
 
     cout << endl << "----------------------------------------------------------" << endl;
     float nodoInicio[2], nodoFinal[2];
@@ -746,45 +748,55 @@ int main(){
     cin >> nodoInicio[1];
 
     // // --> Imprimimos nodo seleccionado
+    switchinWindow = false;
+    prepare = false;
     inicio = nodoInicio;
     // // activar punto inicial
-    switchinWindow = true;
-    prepare = true;
-
     cout << "Continuar (Enter)?\n";
     cin.ignore();
     cin.get();
 
+    switchinWindow = true;
+    prepare = true;
 
-    switchinWindow = false;
-    prepare = false;
+
+
     cout << "Seleccione el nodo de FINAL: (coordenada X)" << endl;
     cin >> nodoFinal[0];
     cout << "Seleccione el nodo de FINAL: (coordenada Y)" << endl;
     cin >> nodoFinal[1];
 
+    switchinWindow = false;
+    prepare = false;
     // // --> Imprimimos nodo seleccionado
     final = nodoFinal;
-    
+    cout << "Continuar (Enter)?\n";
+    cin.ignore();
+    cin.get();
+
     switchinWindow = true;
     prepare = true;
 
     //  activar busqueda
     
     cout << endl << "----------------------------------------------------------" << endl;
-    cout << "Continuar con la busqueda(Enter)?\n";
-    cin.ignore();
+    cout << "Continuar con la busqueda en profundidad(Enter)?\n";
     cin.get();
+
 
     switchinWindow = false;
     prepare = false;
+
     cout << "Busqueda en Profundidad\n";
     arbol.busquedaProfundidad(inicio, final);
+
+    cout << "Continuar (Enter)?\n";
+    cin.get();
 
     switchinWindow = true;
     prepare = true;
 
-    cout << "Continuar (Enter)?\n";
+    cout << "Continuar con la busqueda en amplitud(Enter)?\n";
     cin.get();
 
     switchinWindow = false;
@@ -793,6 +805,9 @@ int main(){
     cout << "Busqueda en amplitud\n";
     arbol.busquedaAmplitud(inicio, final);
     
+    cout << "Continuar (Enter)?\n";
+    cin.get();
+
     switchinWindow = true;
     prepare = true;
     
